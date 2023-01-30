@@ -1,32 +1,8 @@
 import {useState, useEffect} from "react";
 
 function App() {
-  const [expressionValue, setExpressionValue] = useState("0");
   const [expression, setExpression] = useState("0");
   const [prevExpression, setPrevExpression] = useState("");
-  const [operationSymbol, setOperationSymbol] = useState("");
-  const [operationValues, setOperationValues] = useState({
-    firstValue: 0,
-    secondValue: 0
-  });
-  const [hasMounted, setHasMounted] = useState(false);
-
-  function calculate(opSymbol, opValues) {
-    const {firstValue, secondValue} = opValues;
-
-    let calculation;
-    if(opSymbol === "+") {
-      calculation = firstValue + secondValue;
-    } else if(opSymbol === "-") {
-      calculation = firstValue - secondValue;
-    } else if(opSymbol === "*"){
-      calculation = firstValue * secondValue;
-    } else {
-      calculation = firstValue / secondValue;
-    }
-
-    return String(calculation);
-  }
 
   function expressionVal(value, buttonValue){
       if(value.length >= 20) {
@@ -45,18 +21,14 @@ function App() {
 
   const handleClick = (event) => {
     const buttonValue = event.target.innerText;
-    setExpressionValue((value) => expressionVal(value, buttonValue));
     setExpression((value) => expressionVal(value, buttonValue));
   }
   const allClear = () => {
-    setExpressionValue("");
     setExpression("");
+    setPrevExpression(null);
   }
 
   const deleteChar = () => {
-    setExpressionValue((value) => {
-      return value.slice(0, value.length - 1);
-    });
     setExpression((value) => {
       return value.slice(0, value.length - 1);
     });
@@ -66,48 +38,70 @@ function App() {
     const operationSymbol = event.target.innerText;
   if(expression && expression !== "0") {
       if(!(expression.includes("*") || expression.includes("/") || expression.includes("+") || expression.includes("-"))) {
-        const firstValue = parseFloat(expressionValue);
-        setOperationValues((operationValues) => {
-          return {...operationValues, firstValue};
-        });
-        setOperationSymbol(operationSymbol);
-
         setExpression((expression) => expression + operationSymbol);
-        setExpressionValue("");
       }
     }
   }
 
-  const handleClickResultBtn = () => {
-    if(expressionValue && operationSymbol) {
-      setOperationValues((operationValues) => {
-        return {...operationValues, secondValue: parseFloat(expressionValue)};
-      });
+  const getOpValues = (operationSymbol, expression, operationValues) => {
+      operationValues.firstValue = expression.slice(0, expression.indexOf(operationSymbol));
+      operationValues.secondValue = expression.slice(expression.indexOf(operationSymbol) + 1, expression.length);
+  }
+
+  const isSymbolFoundInExpression = (expression) => {
+    if(expression.includes("+") || expression.includes("-") || expression.includes("*") || expression.includes("/")) {
+      return true;
+    } else {
+      return false;
     }
   }
 
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
+  const isSecondValueFoundInExpression = (expression) => {
+    const lastChar = expression[expression.length - 1];
+    if(lastChar !== "+" && lastChar !== "-" && lastChar !== "*" && lastChar !== "/"){
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  const handleClickResultBtn = () => {
+    const isSymbolFound = isSymbolFoundInExpression(expression);
+    const isSecondValueFound = isSecondValueFoundInExpression(expression);
+    if(isSymbolFound && expression !== "0" && isSecondValueFound) {
+        const operationValues = {
+          firstValue: 0,
+          secondValue: 0,
+        };
+        let result = expression;
+        if(expression.includes("+")) {
+          getOpValues("+", expression, operationValues);
+          result = parseFloat(operationValues.firstValue) + parseFloat(operationValues.secondValue);
+        } else if(expression.includes("-")) {
+          getOpValues("-", expression, operationValues);
+          result = parseFloat(operationValues.firstValue) - parseFloat(operationValues.secondValue);
+        } else if(expression.includes("*")) {
+          getOpValues("*", expression, operationValues);
+          result = parseFloat(operationValues.firstValue) * parseFloat(operationValues.secondValue);
+        } else if(expression.includes("/")) {
+          getOpValues("/", expression, operationValues);
+          result = parseFloat(operationValues.firstValue) / parseFloat(operationValues.secondValue);
+        }
+
+        setPrevExpression(expression + " =");
+        if(isNaN(result)) {
+          setExpression("Error");
+        } else {
+          setExpression(String(result));
+        }
+    }
+  }
 
   useEffect(() => {
     if(!expression) {
       setExpression("0");
     }
-    if(!expressionValue) {
-      setExpressionValue("0");
-    }
-
-   }, [expressionValue, expression]);
-
-  useEffect(() => {
-    if(hasMounted) {
-      setExpression(calculate(operationSymbol, operationValues));
-      setExpressionValue(calculate(operationSymbol, operationValues));
-      setOperationSymbol("");
-    }
-
-  }, [operationValues.secondValue]);
+   }, [expression]);
 
   return (
     <>
