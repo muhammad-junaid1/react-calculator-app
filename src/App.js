@@ -36,10 +36,15 @@ function App() {
 
   const performOperation = (event) => {
     const operationSymbol = event.target.innerText;
+    const lastChar = expression[expression.length - 1];
   if(expression && expression !== "0") {
-      if(!(expression.includes("*") || expression.includes("/") || expression.includes("+") || expression.includes("-"))) {
+      if(!isSymbolFoundInExpression) {
         setExpression((expression) => expression + operationSymbol);
-      }
+      } else if (operationSymbol === "-" && expression.match(/-/g).length === 1) {
+          if(expression[0] === "-" || lastChar === "*" || lastChar === "/" || lastChar === "+" || lastChar === "-") {
+            setExpression((expression) => expression + operationSymbol);
+          }
+      }    
     }
   }
 
